@@ -122,6 +122,12 @@ def solve(dist0, dist1, xl0: np.array, xl1: np.array):
             best_error_coord = (fpp[-1], tpp[-1])
             best_gamma = gamma
 
+    # print('first 15 tpp: ', tpp[:15])
+    # print('first 15 fpp: ', fpp[:15])
+
+    # print('last 15 tpp: ', tpp[-15:])
+    # print('last 15 fpp: ', fpp[-15:])
+
     print('Heuristical best error: ', best_error)
     print('Heuristical best gamma: ', best_gamma)
 
