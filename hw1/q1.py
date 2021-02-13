@@ -6,18 +6,32 @@ from scipy.stats import multivariate_normal
 from scipy.linalg import logm, expm
 import matplotlib.pyplot as plt
 from dataclasses import dataclass
+import random
 
 @dataclass
 class LabeledBox:
     value: object
     label: str
         
-# Number of samples to generate per distribution
-SAMPLE_NO=5000
-
 ## PRIORS ###
 PRIOR0 = 0.7
 PRIOR1 = 0.3
+
+# Number of samples to generate per distribution
+SAMPLE_NO=10000
+SAMPLE_NO_0=0
+SAMPLE_NO_1=0
+
+# Determine number of samples per distribution according to priors
+for k in range(SAMPLE_NO):
+    r = random.random()
+    if r <= PRIOR0:
+        SAMPLE_NO_0 += 1
+    else:
+        SAMPLE_NO_1 += 1
+
+print('sample no. 0: ', SAMPLE_NO_0)
+print('sample no. 1: ', SAMPLE_NO_1)
 
 # mean for class 0
 M0 = np.array([-1, 1, -1, 1])
@@ -156,18 +170,18 @@ def generateAndSampleTwoClasses(m0, c0, m1, c1):
     :param c0: coveriance matrix of first distribution
     :param m1: mean of second distribution
     :param c1: coveriance matrix of second distribution
-    :return: [distribution1, distribution2, SAMPLE_NO of samples from distribution1,
-             SAMPLE_NO of samples from distribution2]
+    :return: [distribution1, distribution2, SAMPLE_NO_0 of samples from distribution1,
+             SAMPLE_NO_1 of samples from distribution2]
     """
     # generate samples that fit class conditional distribution of class 0
     # p(x|L=0) -> 4D random vector x|L=0
     dist0 = multivariate_normal(m0, c0)
-    xl0 = dist0.rvs(size=SAMPLE_NO)
+    xl0 = dist0.rvs(size=SAMPLE_NO_0)
 
     # generate samples that fit class conditional distribution of class 0
     # p(x|L=1) -> 4D random vector
     dist1 = multivariate_normal(m1, c1)
-    xl1 = dist1.rvs(size=SAMPLE_NO)
+    xl1 = dist1.rvs(size=SAMPLE_NO_1)
 
     # xl0[:, k] returns kth columns of xl0
     # plot each column one a separate axis, with the exception with the last, which is plotted as a
