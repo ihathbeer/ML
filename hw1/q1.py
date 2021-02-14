@@ -25,7 +25,7 @@ SAMPLE_NO_1=0
 # Determine number of samples per distribution according to priors
 for k in range(SAMPLE_NO):
     r = random.random()
-    if r <= PRIOR0:
+    if r < PRIOR0:
         SAMPLE_NO_0 += 1
     else:
         SAMPLE_NO_1 += 1
@@ -191,16 +191,16 @@ def generateAndSampleTwoClasses(m0, c0, m1, c1):
     ax0 = fig.add_subplot(1, 2, 1, projection='3d')
     ax0.title.set_text('samples of X for class 0')
     ax0.set_xlabel('x0')
-    ax0.set_xlabel('x1')
-    ax0.set_xlabel('x2')
+    ax0.set_ylabel('x1')
+    ax0.set_zlabel('x2')
     img0 = ax0.scatter(xl0[:, 0], xl0[:, 1], xl0[:, 2], c=xl0[:, 3], cmap=plt.hot())
     fig.colorbar(img0)
     # xl1 plot
     ax1 = fig.add_subplot(1, 2, 2, projection='3d')
     ax1.title.set_text('samples of X for class 1')
     ax1.set_xlabel('x0')
-    ax1.set_xlabel('x1')
-    ax1.set_xlabel('x2')
+    ax1.set_ylabel('x1')
+    ax1.set_zlabel('x2')
     img1 = ax1.scatter(xl1[:, 0], xl1[:, 1], xl1[:, 2], c=xl1[:, 3], cmap=plt.hot())
     fig.colorbar(img1)
 
