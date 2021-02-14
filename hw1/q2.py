@@ -99,8 +99,6 @@ M2 = np.array([
     2.2  # 0.2 + 2*((sqrt(1)+sqrt(1))/2) = 0.2 + 2*1 = 2.2
     ])
 
-
-
 # ======== CLASS 3 =========
 # mixture of Gaussian distributions
 # first covariance matrix for class 3
@@ -112,7 +110,7 @@ C3 = np.array([
 # first mean for class 3
 M3 = np.array([
     8.2, # 4.2 + 2*((sqrt(4)+sqrt(4))/2)
-    12.2, # 12.2 + 2*((sqrt(16)+sqrt(4))/2)
+    12.2, # 6.2 + 2*((sqrt(16)+sqrt(4))/2)
     4.2  # 2.2 + 2*((sqrt(1)+sqrt(1))/2)
     ])
 
@@ -125,7 +123,7 @@ C4 = np.array([
 # second mean for class 3
 M4 = np.array([
     12.2, # 8.2 + 2*((sqrt(4)+sqrt(4))/2)
-    14.2, # 12.2 + 2*((sqrt(4)+sqrt(4))/2)
+    16.2, # 12.2 + 2*((sqrt(4)+sqrt(4))/2)
     6.2   # 4.2 + 2*((sqrt(1)+sqrt(1))/2)
     ])
 
@@ -183,13 +181,13 @@ def plot(xl1, xl2, xl3):
 
     plt.legend(handles=[img1, img2, img3])
 
-def classify(pxl, X, loss_matrix: np.array):
+def classify(pxl: list, X, loss_matrix: np.array):
     """
     Classifies each X given a loss_matrix and P(L|X) for all L and X.
 
-    :param pxl: MxNxZ array; M = number of labels; N = number of samples; Z = dimension of sampled
-                vector X
+    :param pxl: MxN array of LabeledBox; M = number of labels; N = number of LabeledBox (samples);
     :param loss_matrix: loss matrix
+    :return: list of string decision labels (same length and order as X)
     """
     classification = []
 
@@ -249,6 +247,20 @@ def get_pdfs(xl1, xl2, xl3):
     return pxl1, pxl2, pxl3, X
 
 def solve(xl1, xl2, xl3, loss_matrix: np.array):
+    """
+    Determines correctly and incorrectly classified X's as well as confusion
+    matrix for given parameter.
+
+    :return:  dict indexed by string label (i.e. '1', '2', '3') representing class
+              with each index corresponding to a list of vectors x that were classified
+              correctly for their class,
+
+              dict indexed by string label (i.e. '1', '2', '3') representing class
+              with each index corresponding to a list of vectors x that were classified
+              correctly for their class,
+
+              (3x3) confusion matrix
+    """
     # Get PDF of each sample set for each class
     pxl1, pxl2, pxl3, X = get_pdfs(xl1, xl2, xl3)
     # Classify
