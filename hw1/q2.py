@@ -88,14 +88,14 @@ M1 = np.array([
 # covariance matrix for class 2
 C2 = np.array([
     [4,       -0.2,    -0.1],
-    [-0.1,    16,        0],
+    [-0.1,    9,        0],
     [0,       0.12,     1]])
 
 # mean for class 2
 # for each dimension, it is 2*avg. stddev away from the previous class' mean for that dimension
 M2 = np.array([
     4.2, # 0.2 + 2*((sqrt(4)+sqrt(4))/2) = 0.2 + 2*2 = 4.2
-    6.2, # 0.2 + 2*((sqrt(4)+sqrt(16))/2) = 0.2 + 2*3 = 6.2
+    5.2, # 0.2 + 2*((sqrt(4)+sqrt(9))/2) = 0.2 + 5 = 5.2
     2.2  # 0.2 + 2*((sqrt(1)+sqrt(1))/2) = 0.2 + 2*1 = 2.2
     ])
 
@@ -110,7 +110,7 @@ C3 = np.array([
 # first mean for class 3
 M3 = np.array([
     8.2, # 4.2 + 2*((sqrt(4)+sqrt(4))/2)
-    12.2, # 6.2 + 2*((sqrt(16)+sqrt(4))/2)
+    10.2, # 5.2 + 2*((sqrt(9)+sqrt(4))/2)
     4.2  # 2.2 + 2*((sqrt(1)+sqrt(1))/2)
     ])
 
@@ -123,7 +123,7 @@ C4 = np.array([
 # second mean for class 3
 M4 = np.array([
     12.2, # 8.2 + 2*((sqrt(4)+sqrt(4))/2)
-    16.2, # 12.2 + 2*((sqrt(4)+sqrt(4))/2)
+    14.2, # 10.2 + 2*((sqrt(4)+sqrt(4))/2)
     6.2   # 4.2 + 2*((sqrt(1)+sqrt(1))/2)
     ])
 
