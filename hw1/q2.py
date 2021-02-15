@@ -74,8 +74,8 @@ print('Total:', SAMPLE_NO_1+SAMPLE_NO_2+SAMPLE_NO_3+SAMPLE_NO_4)
 # covariance matrix for class 1
 C1 = np.array([
     [4,      0.2,    -0.3],
-    [0.3,    4,      0.5],
-    [-0.2,     0.5,     1]])
+    [0.2,    4,      0.5],
+    [-0.3,     0.5,     1]])
 
 # mean for class 1
 M1 = np.array([
@@ -88,8 +88,8 @@ M1 = np.array([
 # covariance matrix for class 2
 C2 = np.array([
     [4,       -0.2,    -0.1],
-    [-0.1,    9,        0],
-    [0,       0.12,     1]])
+    [-0.2,      9,        0],
+    [-0.1,      0,       1]])
 
 # mean for class 2
 # for each dimension, it is 2*avg. stddev away from the previous class' mean for that dimension
@@ -104,8 +104,8 @@ M2 = np.array([
 # first covariance matrix for class 3
 C3 = np.array([
     [4,       -0.1,    0.1],
-    [-0.1,    4,        0],
-    [0,       0.1,     1]])
+    [-0.1,    4,       0.1],
+    [0.1,     0.1,     1]])
 
 # first mean for class 3
 M3 = np.array([
@@ -117,8 +117,8 @@ M3 = np.array([
 # second covariance matrix for class 3
 C4 = np.array([
     [4,       -0.1,    0.1],
-    [-0.1,    4,        0],
-    [0,       0.1,     1]])
+    [-0.1,    4,       0.1],
+    [0.1,     0.1,     1]])
 
 # second mean for class 3
 M4 = np.array([
