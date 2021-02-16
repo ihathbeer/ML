@@ -7,6 +7,7 @@ from scipy.stats import multivariate_normal
 import random
 from dataclasses import dataclass
 from collections import defaultdict
+import scipy
 
 @dataclass
 class LabeledBox:
@@ -205,7 +206,8 @@ def classify(pxl: list, X, loss_matrix: np.array):
                 risks[i] += loss * prob * PRIORS[j]
 
         # choose action with least risk
-        decision = risks.index(min(risks)) + 1
+        min_risk = min(risks)
+        decision = risks.index(min_risk) + 1
         classification.append(str(decision))
 
     return classification
@@ -275,6 +277,7 @@ def solve(xl1, xl2, xl3, loss_matrix: np.array):
     # Initialize confusion matrix
     confusion_matrix = np.zeros((3,3), dtype=float)
 
+    minimum_risk = 0
     # Determine correctly/incorrectly classified x
     for k in range(len(X)):
         label = X[k].label
@@ -285,6 +288,15 @@ def solve(xl1, xl2, xl3, loss_matrix: np.array):
         else:
             iccl[label].append(X[k].value)
         confusion_matrix[int(classification[k])-1][int(label)-1] += 1
+
+    # Compute minimum risk
+    for i in range(len(confusion_matrix)):
+        for j in range(len(confusion_matrix[i])):
+            minimum_risk += confusion_matrix[i][j] * loss_matrix[i][j]
+
+    minimum_risk /= SAMPLE_NO
+
+    print('Estimated minimum risk: ', minimum_risk)
 
     # Scale confusion matrix
     for k in range(len(confusion_matrix)):
