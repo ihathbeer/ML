@@ -39,8 +39,8 @@ def read_data(name: str) -> dict:
     return class_data
 
 
-class_data = read_data('winequality-red.csv')
-render(class_data)
+class_data = read_data('winequality-white.csv')
+#render(class_data)
 priors, gaussians = create_distributions(class_data)
 
 labeled_data, classifications = classify(class_data, gaussians, priors)

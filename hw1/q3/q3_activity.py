@@ -37,11 +37,13 @@ def read_data(data_name: str, labels_name: str) -> dict:
     for k in class_data:
         class_data[k] = np.array(class_data[k])
 
+        print(f'shape of class entry {k}: ', class_data[k].shape)
+
     return class_data
 
 
 class_data = read_data('x_train.txt', 'Y_train.txt')
-render(class_data)
+#render(class_data)
 
 priors, gaussians = create_distributions(class_data)
 

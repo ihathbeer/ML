@@ -11,7 +11,6 @@ from scipy.stats import multivariate_normal
 
 # Regularization parameter
 ALPHA = 0.00000012
-
 # Maximum number of feature plots (to ease memory concerns)
 MAX_FEATURE_PLOTS = 6
 
@@ -67,6 +66,11 @@ def assess_classification(class_data, labeled_data: [LabeledValue], classificati
     correctly_classified = defaultdict(lambda: 0)
     incorrectly_classified = defaultdict(lambda: 0)
 
+    # Correctly classified labeled data
+    ccld = []
+    # Incorrectly classified labeled data
+    icld = []
+
     # Put labels in a sorted list so we can use their indexes to form & access
     # confusion matrix
     labels = sorted(list(class_data.keys()))
@@ -78,8 +82,10 @@ def assess_classification(class_data, labeled_data: [LabeledValue], classificati
 
         if label == classification[k]:
             correctly_classified[label] += 1
+            ccld.append(labeled_data[k])
         else:
             incorrectly_classified[label] += 1
+            icld.append(labeled_data[k])
 
         # Convert classification label -> index
         classification_index = labels.index(classification[k])
@@ -121,7 +127,7 @@ def assess_classification(class_data, labeled_data: [LabeledValue], classificati
             perror += confusion_matrix[j][i] * priors[labels[i]]
 
     print('P(error): ', perror)
-    print('Confusion matrix:\n', confusion_matrix)
+    print('Confusion matrix:\n', bmatrix(confusion_matrix))
 
 def render(class_data):
     """
@@ -198,3 +204,22 @@ def create_distributions(data: dict) -> tuple:
         # print(f'class label {class_label} has cov of: ', cov_matrices[class_label])
 
     return priors, gaussians
+
+
+def bmatrix(a):
+    """Returns a LaTeX bmatrix
+
+    Credit: https://stackoverflow.com/questions/17129290/numpy-2d-and-1d-array-to-latex-bmatrix
+    :a: numpy array
+    :returns: LaTeX bmatrix as a string
+    """
+    if len(a.shape) > 2:
+        raise ValueError('bmatrix can at most display two dimensions')
+
+    np.set_printoptions(formatter={'float': lambda x: "{0:0.5f}".format(x)})
+
+    lines = str(a).replace('[', '').replace(']', '').splitlines()
+    rv = [r'\begin{bmatrix}']
+    rv += ['  ' + ' & '.join(l.split()) + r'\\' for l in lines]
+    rv +=  [r'\end{bmatrix}']
+    return '\n'.join(rv)
