@@ -6,6 +6,7 @@ from numpy import genfromtxt
 import csv
 from collections import defaultdict
 from common import render, create_distributions, classify, assess_classification, render_pca
+from sklearn.preprocessing import normalize
 
 
 DATA_PATH = 'data/wine'
@@ -34,16 +35,20 @@ def read_data(name: str) -> dict:
         # Drop off last column (class label)
         class_data[quality_score] = class_data[quality_score][:, :-1]
 
+        # Normalize
+        if len(class_data[quality_score]) > 0:
+            class_data[quality_score] = normalize(class_data[quality_score], axis=0, norm='max')
+
         print(f'samples for class {quality_score}: {len(class_data[quality_score])}')
 
     return class_data
 
 
-class_data = read_data('winequality-white.csv')
-#render(class_data)
+class_data = read_data('winequality-red.csv')
+render(class_data)
 priors, gaussians, cov = create_distributions(class_data)
 
-#render_pca(class_data, cov)
+render_pca(class_data, cov)
 
 labeled_data, classifications = classify(class_data, gaussians, priors)
 
