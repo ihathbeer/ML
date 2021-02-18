@@ -3,7 +3,7 @@
 
 import numpy as np
 from collections import defaultdict
-from common import render, create_distributions, classify, assess_classification
+from common import render, create_distributions, classify, assess_classification, render_pca
 
 DATA_PATH = 'data/activity'
 
@@ -42,10 +42,12 @@ def read_data(data_name: str, labels_name: str) -> dict:
     return class_data
 
 
-class_data = read_data('x_train.txt', 'Y_train.txt')
+class_data = read_data('X_combined.txt', 'Y_combined.txt')
 #render(class_data)
 
-priors, gaussians = create_distributions(class_data)
+priors, gaussians, variances = create_distributions(class_data)
+
+#render_pca(class_data, variances)
 
 labeled_data, classifications = classify(class_data, gaussians, priors)
 

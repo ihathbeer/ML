@@ -129,7 +129,47 @@ def assess_classification(class_data, labeled_data: [LabeledValue], classificati
     print('P(error): ', perror)
     print('Confusion matrix:\n', bmatrix(confusion_matrix))
 
-def render(class_data):
+def render_pca(class_data: dict, cov: dict):
+    """
+    Renders PCA for given class_data & covariance matrices.
+
+    :param class_data: dict(class label, data)
+    :param cov: dict(class label, covariance matrix)
+    :return: None
+    """
+    handles = []
+    # Create figure
+    fig = plt.figure(0)
+    ax = fig.add_subplot(1, 1, 1)
+    # Set plot title
+    ax.title.set_text(f'PCA')
+    # Set axis labels
+    plt.xlabel("Component 1") 
+    plt.ylabel("Component 2")
+    # For each class label, calculate X*A, where A is the projection
+    # matrix made up of the first two eigen vectors following PCA decomposition
+    for label in class_data:
+        if label not in cov:
+            continue
+
+        eigen_vals, eigen_vecs = np.linalg.eig(cov[label])
+
+        # Keep first two eigen vecs (that correspond to two highest eigenvalues)
+        A = (eigen_vecs.T[:][:2]).T
+    
+        # Apply PCA to original class data
+        class_pca = class_data[label].dot(A)
+        component1 = np.ravel(class_pca[:,0])
+        component2 = np.ravel(class_pca[:,1])
+
+        # Create scatter
+        handles.append(ax.scatter(component1, component2, label=f'Class {label}'))
+
+    plt.legend(handles=handles)
+    plt.show()
+
+
+def render(class_data: dict):
     """
     Renders data three features at a time across classes.
     """
@@ -160,7 +200,7 @@ def create_distributions(data: dict) -> tuple:
     Creates Gaussian distribution for each class in dict and
     returns resulting Gaussians & priors.
 
-    :return: tuple(dict(label, prior:int), dict(label, gaussian: scipy.stats.multivariate_normal))
+    :return: tuple(dict(label, prior:int), dict(label, gaussian: scipy.stats.multivariate_normal), dict(label, cov))
     """
     cov_matrices = {}
     mean_matrices = {}
@@ -203,7 +243,7 @@ def create_distributions(data: dict) -> tuple:
         # print(f'class label {class_label} has mean of: ', mean_matrices[class_label])
         # print(f'class label {class_label} has cov of: ', cov_matrices[class_label])
 
-    return priors, gaussians
+    return priors, gaussians, cov_matrices
 
 
 def bmatrix(a):

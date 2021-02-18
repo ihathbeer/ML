@@ -5,7 +5,7 @@ import numpy as np
 from numpy import genfromtxt
 import csv
 from collections import defaultdict
-from common import render, create_distributions, classify, assess_classification
+from common import render, create_distributions, classify, assess_classification, render_pca
 
 
 DATA_PATH = 'data/wine'
@@ -41,7 +41,9 @@ def read_data(name: str) -> dict:
 
 class_data = read_data('winequality-white.csv')
 #render(class_data)
-priors, gaussians = create_distributions(class_data)
+priors, gaussians, cov = create_distributions(class_data)
+
+#render_pca(class_data, cov)
 
 labeled_data, classifications = classify(class_data, gaussians, priors)
 
