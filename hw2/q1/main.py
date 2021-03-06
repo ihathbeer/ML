@@ -44,19 +44,19 @@ def genPolyFeatureMatrix(data, deg):
         result.append(phi_i(X, deg))
     return np.array(result)
 
-def trainMAP(train_x: np.array, train_y: np.array, gamma: float):
+def trainMAP(train_x: np.array, train_y: np.array, lam: float):
     """
     Computes the weight matrix & squared mean error using MAP estimator.
 
     :param x_path: input training set
     :param y_path: output training set
-    :param gamma: regularization term (scalar)
+    :param lam: regularization term lambda (scalar)
     """
     # determine feature matrix
     featureMatrix = genPolyFeatureMatrix(train_x, 3)
 
     # calculate weights
-    w = (np.transpose(featureMatrix) @ featureMatrix) + np.identity(featureMatrix.shape[1]) / gamma
+    w = (np.transpose(featureMatrix) @ featureMatrix) + np.identity(featureMatrix.shape[1]) * lam
     w = inv(w) @ np.transpose(featureMatrix) @ train_y
 
     # calculate training error
@@ -118,6 +118,14 @@ def test(validation_x, validation_y, weights):
 
 
 def mle(training_x, training_y, validation_x, validation_y):
+    """
+    Performs ML and returns best training & validation errors.
+
+    :param training_x: input dataset to train on
+    :param training_y: output dataset to train on
+    :param validation_x: input dataset to test on
+    :param validation_y: output dataset to test on
+    """
     print(SEPARATOR, ' MLE ', SEPARATOR)
     weights, training_error = trainMLE(training_x, training_y)
 
@@ -128,7 +136,18 @@ def mle(training_x, training_y, validation_x, validation_y):
 
     print('Validation error: ', validation_error)
 
-def map(train_x, train_y, validation_x, validation_y):
+    return training_error, validation_error
+
+def map(train_x, train_y, validation_x, validation_y, noise):
+    """
+    Performs map, plots error vs gamma and returns best error.
+
+    :param train_x: input dataset to train on
+    :param train_y: output dataset to train on
+    :param validation_x: input dataset to test on
+    :param validation_y: output dataset to test on
+    :param noise: observation noise (beta^-1)
+    """
     print(SEPARATOR, ' MAP ', SEPARATOR)
     gamma_space = np.logspace(-4, 4, 200)
     #print('gamma_space:', gamma_space)
@@ -143,7 +162,7 @@ def map(train_x, train_y, validation_x, validation_y):
     optimal_weights = []
 
     for gamma in gamma_space:
-        weights, training_error = trainMAP(train_x, train_y, gamma)
+        weights, training_error = trainMAP(train_x, train_y, noise/gamma)
 
         validation_error = test(validation_x, validation_y, weights)
 
@@ -173,5 +192,5 @@ def map(train_x, train_y, validation_x, validation_y):
 # generate training & validation data via tool provided by TA
 train_x, train_y, validation_x, validation_y = [np.transpose(m) for m in hw2q1()]
 
-mle(train_x, train_y, validation_x, validation_y)
-map(train_x, train_y, validation_x, validation_y)
+beta_inv, validation_error = mle(train_x, train_y, validation_x, validation_y)
+map(train_x, train_y, validation_x, validation_y, beta_inv)
