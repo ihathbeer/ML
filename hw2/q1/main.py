@@ -130,7 +130,8 @@ def mle(training_x, training_y, validation_x, validation_y):
 
 def map(train_x, train_y, validation_x, validation_y):
     print(SEPARATOR, ' MAP ', SEPARATOR)
-    gamma_space = np.linspace(math.pow(10, -4), math.pow(10, 4), 500)
+    gamma_space = np.logspace(-4, 4, 200)
+    #print('gamma_space:', gamma_space)
 
     # initialize empty containers to hold plot data for gamma vs squared mean error
     x = []
@@ -164,6 +165,7 @@ def map(train_x, train_y, validation_x, validation_y):
     plt.title('Squared mean error vs Gamma (MAP)')
     plt.xlabel('Gamma')
     plt.ylabel('Error')
+    plt.xscale('log')
     plt.plot(np.array(x), np.array(y))
     plt.show()
 
