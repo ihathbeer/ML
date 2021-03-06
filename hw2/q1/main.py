@@ -5,6 +5,8 @@ import numpy as np
 from numpy import genfromtxt
 from numpy.linalg import pinv, inv
 import math
+import matplotlib.pyplot as plt
+from hw2q1 import hw2q1, plot3, set_aspect_equal_3d, generateDataFromGMM
 from sklearn.preprocessing import PolynomialFeatures
 
 SEPARATOR = ''.join(['=']*20)
@@ -42,29 +44,19 @@ def genPolyFeatureMatrix(data, deg):
         result.append(phi_i(X, deg))
     return np.array(result)
 
-def loadData(path: str):
-    """
-    Loads dataset by path and returns it as as np.array.
-    """
-    return np.array(genfromtxt(path, delimiter=','))
-
-def trainMAP(x_path: str, y_path: str, gamma: float):
+def trainMAP(train_x: np.array, train_y: np.array, gamma: float):
     """
     Computes the weight matrix & squared mean error using MAP estimator.
 
-    :param x_path: path to input training set
-    :param y_path: path to output training set
+    :param x_path: input training set
+    :param y_path: output training set
     :param gamma: regularization term (scalar)
     """
-    # load training data
-    train_x = loadData(x_path)
-    train_y = loadData(y_path)
-
     # determine feature matrix
     featureMatrix = genPolyFeatureMatrix(train_x, 3)
-    
+
     # calculate weights
-    w = (np.transpose(featureMatrix) @ featureMatrix) + gamma * np.identity(featureMatrix.shape[1])
+    w = (np.transpose(featureMatrix) @ featureMatrix) + np.identity(featureMatrix.shape[1]) / gamma
     w = inv(w) @ np.transpose(featureMatrix) @ train_y
 
     # calculate training error
@@ -72,17 +64,13 @@ def trainMAP(x_path: str, y_path: str, gamma: float):
 
     return w, error
 
-def trainMLE(x_path: str, y_path: str):
+def trainMLE(train_x: np.array, train_y: np.array):
     """
     Computes the weight matrix & squared mean error using MLE estimator.
 
-    :param x_path: path to input training set
-    :param y_path: path to output training set
+    :param train_x: input training set
+    :param train_y: output training set
     """
-    # load training data
-    train_x = loadData(x_path)
-    train_y = loadData(y_path)
-
     # determine feature matrix
     featureMatrix = genPolyFeatureMatrix(train_x, 3)
 
@@ -118,46 +106,70 @@ def calculate_error(x: np.array, y: np.array, w: np.array) -> float:
 
     return error / len(x)
 
-def test(x_path, y_path, weights):
+def test(validation_x, validation_y, weights):
     """
     Computes the squared mean error for the validation / testing set.
 
-    :param x_path: path to input validation set
-    :param y_path: path to output validation set
+    :param x_path: input validation set
+    :param y_path: output validation set
     :param weights: weight matrix
     """
-    # load data
-    test_x = loadData(x_path)
-    test_y = loadData(y_path)
-
-    return calculate_error(test_x, test_y, weights)
+    return calculate_error(validation_x, validation_y, weights)
 
 
-def mle():
+def mle(training_x, training_y, validation_x, validation_y):
     print(SEPARATOR, ' MLE ', SEPARATOR)
-    weights, training_error = trainMLE('data/xtrain.csv', 'data/ytrain.csv')
+    weights, training_error = trainMLE(training_x, training_y)
 
     print('Weights: ', weights)
     print('Training error: ' , training_error)
 
-    validation_error = test('data/xvalidate.csv', 'data/yvalidate.csv', weights)
+    validation_error = test(validation_x, validation_y, weights)
 
     print('Validation error: ', validation_error)
 
-def map():
+def map(train_x, train_y, validation_x, validation_y):
     print(SEPARATOR, ' MAP ', SEPARATOR)
-    gamma_space = np.linspace(math.pow(10, -4), math.pow(10, 4), 1000)
+    gamma_space = np.linspace(math.pow(10, -4), math.pow(10, 4), 500)
+
+    # initialize empty containers to hold plot data for gamma vs squared mean error
+    x = []
+    y = []
+
+    #  variables to hold optimal gamma & error
+    min_error = 9999999
+    optimal_gamma = -1
+    optimal_weights = []
 
     for gamma in gamma_space:
-        print('For gamma: ', gamma)
-        weights, training_error = trainMAP('data/xtrain.csv', 'data/ytrain.csv', gamma)
+        weights, training_error = trainMAP(train_x, train_y, gamma)
 
-        validation_error = test('data/xvalidate.csv', 'data/yvalidate.csv', weights)
+        validation_error = test(validation_x, validation_y, weights)
 
-        print('Validation error: ', validation_error)
+        # print('Validation error: ', validation_error)
+        x.append(gamma)
+        y.append(validation_error)
 
-        # print('Weights: ', weights)
-        # print('Training error: ' , training_error)
+        if validation_error < min_error:
+            min_error = validation_error
+            optimal_gamma = gamma
+            optimal_weights = weights
 
-mle()
-map()
+    print('Min error: ', min_error)
+    print('Optimal gamma: ', optimal_gamma)
+    print('Optimal weights: ', optimal_weights)
+
+    # plot gamma vs squared mean error
+    plt.figure(0)
+    plt.title('Squared mean error vs Gamma (MAP)')
+    plt.xlabel('Gamma')
+    plt.ylabel('Error')
+    plt.plot(np.array(x), np.array(y))
+    plt.show()
+
+
+# generate training & validation data via tool provided by TA
+train_x, train_y, validation_x, validation_y = [np.transpose(m) for m in hw2q1()]
+
+mle(train_x, train_y, validation_x, validation_y)
+map(train_x, train_y, validation_x, validation_y)
