@@ -15,8 +15,6 @@ SEPARATOR = ''.join(['=']*20)
 #  v ~ N(0, sigma^2)
 # MAP: w ~ N(0, gamma * I)
 
-# phi_i(x) = x^i
-
 def phi_i(X, deg):
     """
     Returns the polynomial features of a vector.
@@ -24,13 +22,10 @@ def phi_i(X, deg):
     :param X: vector in question
     :param deg: degree of polynomial
     """
-    # consider adding interactions
-    phi = [1]
-
-    for p in range(1, deg+1):
-        for x in X:
-            phi.append(math.pow(x, p))
-    return phi
+    # includes interactions
+    poly = PolynomialFeatures(deg)
+    result = poly.fit_transform([X])
+    return result[0]
 
 def genPolyFeatureMatrix(data, deg):
     """
@@ -138,7 +133,7 @@ def mle(training_x, training_y, validation_x, validation_y):
 
     return training_error, validation_error
 
-def map(train_x, train_y, validation_x, validation_y, noise):
+def map(train_x, train_y, validation_x, validation_y):
     """
     Performs map, plots error vs gamma and returns best error.
 
@@ -146,7 +141,6 @@ def map(train_x, train_y, validation_x, validation_y, noise):
     :param train_y: output dataset to train on
     :param validation_x: input dataset to test on
     :param validation_y: output dataset to test on
-    :param noise: observation noise (beta^-1)
     """
     print(SEPARATOR, ' MAP ', SEPARATOR)
     gamma_space = np.logspace(-4, 4, 200)
@@ -162,7 +156,7 @@ def map(train_x, train_y, validation_x, validation_y, noise):
     optimal_weights = []
 
     for gamma in gamma_space:
-        weights, training_error = trainMAP(train_x, train_y, noise/gamma)
+        weights, training_error = trainMAP(train_x, train_y, 1/gamma)
 
         validation_error = test(validation_x, validation_y, weights)
 
@@ -192,5 +186,5 @@ def map(train_x, train_y, validation_x, validation_y, noise):
 # generate training & validation data via tool provided by TA
 train_x, train_y, validation_x, validation_y = [np.transpose(m) for m in hw2q1()]
 
-beta_inv, validation_error = mle(train_x, train_y, validation_x, validation_y)
-map(train_x, train_y, validation_x, validation_y, beta_inv)
+training_error, validation_error = mle(train_x, train_y, validation_x, validation_y)
+map(train_x, train_y, validation_x, validation_y)
