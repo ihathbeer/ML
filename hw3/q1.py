@@ -5,7 +5,9 @@
 import numpy as np
 from numpy.linalg import eig
 from scipy.stats import multivariate_normal
+from collections import defaultdict
 import matplotlib.pyplot as plt
+from dataclasses import dataclass
 import random
 
 # Eigenvalues of covariance matrices should be in range [0.5, 1.4]
@@ -14,6 +16,11 @@ cov_eigen_bound = [0.5, 1.4]
 # Set sizes
 train_set_sizes = [100, 200, 500, 1000, 2000, 5000]
 test_set_sizes = [100000]
+
+@dataclass
+class LabeledBox:
+    label: str
+    value: object
 
 # Class parameters
 classes = {
@@ -47,6 +54,8 @@ classes = {
         },
 };
 
+uniform_class_prior = 1.0 / len(classes)
+
 def generate_and_sample(sample_no) -> dict:
     """
     Generates distributions and samples for each class and returns a dictionary 
@@ -65,9 +74,13 @@ def generate_and_sample(sample_no) -> dict:
     """
     results = {}
 
+    sample_no_per_class = int(sample_no / len(classes))
+
+    print(f'Generating {sample_no_per_class} samples per class')
+
     for label, params in classes.items():
         dist = multivariate_normal(params["mean"], params["cov"])
-        x = dist.rvs(size=sample_no)
+        x = dist.rvs(size=sample_no_per_class)
 
         results[label] = {"samples": x, "dist": dist}
 
@@ -103,7 +116,7 @@ def plot_samples(class_dist_samples: dict) -> None:
         img = ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2],
                 c=classes[class_label]["color"])
 
-    plt.show()
+    #plt.show()
 
 covariance_contract()
 
@@ -116,10 +129,14 @@ def generate_sets() -> (dict, dict):
     by set size with value equal to the dict returned by generate_and_sample for
     that size.
 
-                v----- training set of size 100 for each class (1, 2 etc.)
-    i.e. tuple({100: {1: {"samples": [[..]], "dist": }, 2: {"samples: [[..]], "dist": }, ..},
-                {10000: {1: {"samples: [..], "dict": ..}, 2: {"samples":...}}}
-                 ^--- test set of size 10000 for each class (1, 2 etc.)
+    example of object returned:
+           
+    tuple(
+          v----- training set of size 100 for each class (1, 2 etc.)
+        {100: {1: {"samples": [[..]], "dist": }, 2: {"samples: [[..]], "dist": }, ..},
+        {10000: {1: {"samples: [..], "dict": ..}, 2: {"samples":...}}}
+         ^--- test set of size 10000 for each class (1, 2 etc.)
+    )
 
     :return: a tuple made up of training set dict and test set dict
     """
@@ -127,16 +144,81 @@ def generate_sets() -> (dict, dict):
     train_sets = {}
     test_sets = {}
 
+    print('Generating sets..')
+
     for size in train_set_sizes:
         train_sets[size] = generate_and_sample(size)
-        print(f'Generated training set of size {size}')
+        print(f' -> Generated training set of size {size}')
 
     for size in test_set_sizes:
         test_sets[size] = generate_and_sample(size)
-        print(f'Generated test set of size {size}')
+        print(f' -> Generated test set of size {size}')
 
     plot_samples(train_sets[5000])
 
     return train_sets, test_sets
 
-generate_sets()
+def minp_classification(class_dist_samples: dict):
+    """
+    Takes in a dictionary that maps a class label to samples & the distribution
+    the samples came from. It then performs min-p classification to determine
+    the minimum probability of error.
+
+    :param class_dist_samples: dict returned by generate_and_sample
+    """
+    labels = list(class_dist_samples.keys())
+    incorrectly_labeled_no = 0
+
+    # maps class label to distributions
+    distributions = {}
+    for label, items in class_dist_samples.items():
+        distributions[label] = items["dist"]
+
+    # predicted label -> (true_label, sample)
+    classifications = defaultdict(list)
+    counter = 0
+    print('Total sample no.: ', len(class_dist_samples) * len(class_dist_samples[1]['samples']))
+    # for each class
+    for true_label, items in class_dist_samples.items():
+        # for each sample of that class
+        for sample in items["samples"]:
+            best_risk = 9999999
+            best_label = 0
+            # for each class type compute risk
+            for label in labels:
+                risk = 0
+                # for every other class label
+                for label2 in labels:
+                    if label != label2:
+                        # compute risk by adding posteriors
+                        risk += distributions[label2].pdf(sample) * uniform_class_prior
+
+                #  check if risk for this decision is better (lower) than running risk
+                if risk < best_risk:
+                    best_risk = risk
+                    best_label = label
+
+            classifications[best_label].append((true_label, sample))
+
+            counter += 1
+
+            if counter % 1000 == 0:
+                print('Counter: ', counter)
+
+
+    # for each class / label and samples classified as such
+    for classification, labeled_samples in classifications.items():
+        # for each sample classified as 'classification'
+        for (true_label, sample) in labeled_samples:
+            # check if incorrectly classified
+            if true_label != classification:
+                #print(f'Correct label {true_label} Classified as {classification}')
+                incorrectly_labeled_no += 1
+
+    print('Incorrectly classified no.: ', incorrectly_labeled_no)
+    print('P(error)', incorrectly_labeled_no/counter)
+
+    # min prob of error is no of incorrect decisions / total no of samples
+train_sets, test_sets = generate_sets()
+minp_classification(test_sets[100000])
+print('uniform prior: ', uniform_class_prior)
