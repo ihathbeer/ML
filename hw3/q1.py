@@ -7,7 +7,11 @@ from numpy.linalg import eig
 from scipy.stats import multivariate_normal
 from collections import defaultdict
 import matplotlib.pyplot as plt
-from dataclasses import dataclass
+from keras import models
+from keras import layers
+from sklearn.model_selection import cross_val_score
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+# from sklearn.datasets import make_classification
 import random
 
 # Eigenvalues of covariance matrices should be in range [0.5, 1.4]
@@ -17,10 +21,7 @@ cov_eigen_bound = [0.5, 1.4]
 train_set_sizes = [100, 200, 500, 1000, 2000, 5000]
 test_set_sizes = [100000]
 
-@dataclass
-class LabeledBox:
-    label: str
-    value: object
+feature_no = 3
 
 # Class parameters
 classes = {
@@ -276,8 +277,83 @@ def plot_classification(cc, icc):
     plt.legend(handles=handles)
     plt.show()
 
+def create_nn(perceptron_no: int):
+    """
+    Creates a multi-layer perceptrons with the specified number of perceptrons
+    for its first layer. Its second layer uses a softmax activation function to fit
+    results within [0, 1].
+
+    :param perceptron_no: number of perceptrons:
+    :return: compiled model
+    """
+    net = models.Sequential()
+    # add hidden layer
+    net.add(layers.Dense(units=perceptron_no, activation='elu', input_shape=(feature_no,)))
+    # add output layer
+    net.add(layers.Dense(units=len(classes), activation='softmax'))
+    # compile
+    net.compile(loss='sparse_categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
+
+    return net
+
+def run_cross_val(X, Y, perceptron_no, epoch_no):
+    print(f'Sample no: {len(Y)} {len(X)}')
+
+    nn = KerasClassifier(build_fn=create_nn, perceptron_no=perceptron_no, epochs=epoch_no, batch_size=1, verbose=0)
+
+    scores = cross_val_score(nn, X, Y, cv=10)
+    return np.mean(scores)
+
+def splice(set_: dict) -> (list, list):
+    """
+    Processes data for training.
+
+    :param set_: dict indexed by class label that maps to a dict with two fields
+                 (samples and distr), as returned by generate_sets
+
+    :return: tuple containing the features and their corresponding labels
+    """
+    X = []
+    Y = []
+
+    for label, items in set_.items():
+        for sample in items["samples"]:
+            X.append(np.array(sample))
+            # print(f'true label {label} y: {y}')
+            Y.append(label)
+
+    X = np.array(X)
+    Y = np.array(Y)
+    print('X: ', X.shape)
+    print('Y: ', Y.shape)
+    return X, Y
+
 # min prob of error is no of incorrect decisions / total no of samples
 train_sets, test_sets = generate_sets()
-cc, icc = minp_classification(test_sets[100000])
+## Min-p classification
+# cc, icc = minp_classification(test_sets[100000])
 # plot_classification(cc, icc)
-print('uniform prior: ', uniform_class_prior)
+
+# ANN stuff
+# maps set size -> optimal perceptron no.
+size_to_optimal_p = {}
+
+for size, set_ in train_sets.items():
+    print(f'=== Training set of size {size} ===')
+    best_error = 9999
+    best_perceptron_no = 0
+
+    for k in range(1, 8):
+        X, Y = splice(set_)
+        acc = run_cross_val(X, Y, k, 100)
+        error = 1 - acc
+
+        print(f'Perceptron no. = {k} Avg cross-validation acc: {acc}')
+
+        if error < best_error:
+            best_error = error
+            best_perceptron_no = k
+
+    print(f'Optimal no. of perceptrons for set size {size}: {best_perceptron_no}')
+    size_to_optimal_p[size] = best_perceptron_no
+    print('\n')
