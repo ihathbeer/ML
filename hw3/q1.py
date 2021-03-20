@@ -29,28 +29,32 @@ classes = {
             "cov": [[ 0.8, 0.03, 0.02 ],
                     [ 0.03, 1.12, 0.03],
                     [ 0.02, 0.03, 1.06]],
-            "color": "green"
+            "color": "green",
+            "marker": "o"
         },
         2: { 
             "mean": [1, -1, 1],
             "cov": [[ 0.92, 0.01, 0.09 ],
                     [ 0.01, 1.32, 0.03],
                     [ 0.09, 0.03, 0.66]],
-            "color": "red"
+            "color": "red",
+            "marker": "^",
         },
         3: { 
             "mean": [-1, -1, 1],
             "cov": [[ 1.12, 0.02, 0.19 ],
                     [ 0.02, 1.11, 0.03],
                     [ 0.19, 0.03, 0.71]],
-            "color": "blue"
+            "color": "blue",
+            "marker": "s"
         },
         4: { 
             "mean": [-1, 1, -1],
             "cov": [[ 1.02, 0.03, 0.24 ],
                     [ 0.03, 0.97, 0.2 ],
                     [ 0.24, 0.2, 0.82]],
-            "color": "purple"
+            "color": "purple",
+            "marker": "D"
         },
 };
 
@@ -108,14 +112,17 @@ def plot_samples(class_dist_samples: dict) -> None:
     fig = plt.figure(0)
     ax = fig.add_subplot(1, 1, 1, projection='3d')
 
+    handles = []
     for class_label, data in class_dist_samples.items():
         samples = data["samples"]
         ax.set_xlabel('x0')
         ax.set_ylabel('x1')
         ax.set_zlabel('x2')
         img = ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2],
-                c=classes[class_label]["color"])
+                c=classes[class_label]["color"], label=f'Class {class_label}')
+        handles.append(img)
 
+    plt.legend(handles=handles)
     #plt.show()
 
 covariance_contract()
@@ -182,30 +189,31 @@ def minp_classification(class_dist_samples: dict):
     for true_label, items in class_dist_samples.items():
         # for each sample of that class
         for sample in items["samples"]:
-            best_risk = 9999999
+            best_prob = -999999
             best_label = 0
-            # for each class type compute risk
+            # for each class type determine posterior
             for label in labels:
-                risk = 0
-                # for every other class label
-                for label2 in labels:
-                    if label != label2:
-                        # compute risk by adding posteriors
-                        risk += distributions[label2].pdf(sample) * uniform_class_prior
-
-                #  check if risk for this decision is better (lower) than running risk
-                if risk < best_risk:
-                    best_risk = risk
+                prob = distributions[label].pdf(sample) * uniform_class_prior
+                
+                # check if this risk beats previous
+                if best_prob < prob:
+                    best_prob = prob
                     best_label = label
 
             classifications[best_label].append((true_label, sample))
 
+            # increment counter
             counter += 1
 
+            # print where we are
             if counter % 1000 == 0:
                 print('Counter: ', counter)
 
 
+    # correctly classified samples
+    cc = []
+    # incorrectly classified samples
+    icc = []
     # for each class / label and samples classified as such
     for classification, labeled_samples in classifications.items():
         # for each sample classified as 'classification'
@@ -214,11 +222,62 @@ def minp_classification(class_dist_samples: dict):
             if true_label != classification:
                 #print(f'Correct label {true_label} Classified as {classification}')
                 incorrectly_labeled_no += 1
+                icc.append((true_label, sample))
+            else:
+                cc.append((true_label, sample))
 
+    # class label
     print('Incorrectly classified no.: ', incorrectly_labeled_no)
     print('P(error)', incorrectly_labeled_no/counter)
 
-    # min prob of error is no of incorrect decisions / total no of samples
+    return cc, icc
+
+def plot_classification(cc, icc):
+    """
+    Plots correctly and incorrectly classified samples.
+
+    :param cc: list of correctly classified sample tuples (true_label, sample)
+    :param icc: list of incorrectly classified sample tuples (true_label, sample)
+    """
+    # dict to hold correctly classified samples by class
+    ccl = defaultdict(list)
+    # dict to hold incorrectly classified samples by class
+    iccl = defaultdict(list)
+
+    # convert to dicts indexed by true class label
+    for true_label, sample in cc:
+        ccl[true_label].append(sample)
+
+    for true_label, sample in icc:
+        iccl[true_label].append(sample)
+
+    fig = plt.figure(1)
+    ax = fig.add_subplot(1, 1, 1, projection='3d')
+    ax.title.set_text('Classification result')
+    ax.set_xlabel('x0')
+    ax.set_ylabel('x1')
+    ax.set_zlabel('x2')
+
+    handles = []
+
+    for k in ccl.keys():
+        # convert each entry to an np array for slicing
+        ccl[k] = np.array(ccl[k])
+        iccl[k] = np.array(iccl[k])
+
+        handles.append(ax.scatter(ccl[k][:, 0], ccl[k][:, 1], ccl[k][:, 2],
+            marker=classes[k]['marker'], color='green',
+            label=f'Class {k} correctly classified'))
+
+        handles.append(ax.scatter(iccl[k][:, 0], iccl[k][:, 1], iccl[k][:, 2],
+            marker=classes[k]['marker'], color='red',
+            label=f'Class {k} incorrectly classified'))
+
+    plt.legend(handles=handles)
+    plt.show()
+
+# min prob of error is no of incorrect decisions / total no of samples
 train_sets, test_sets = generate_sets()
-minp_classification(test_sets[100000])
+cc, icc = minp_classification(test_sets[100000])
+# plot_classification(cc, icc)
 print('uniform prior: ', uniform_class_prior)
