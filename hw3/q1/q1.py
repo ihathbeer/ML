@@ -7,6 +7,7 @@ from numpy.linalg import eig
 from scipy.stats import multivariate_normal
 from collections import defaultdict
 import matplotlib.pyplot as plt
+import matplotlib
 from keras import models
 from keras import layers
 from sklearn.model_selection import cross_val_score
@@ -14,6 +15,7 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 import tensorflow as tf
 import random
+import math
 import logging
 import pickle
 import random
@@ -26,8 +28,8 @@ random.seed()
 
 # Settings
 LOAD_CACHED_DATA = True
-SOLVE = True
-OBSERVE = False
+SOLVE = False
+OBSERVE = True
 
 # number of splits for cross-validation
 K_SPLIT = 10
@@ -530,20 +532,56 @@ def plot_error_vs_size():
     minp_test_error = load_dict(MINP_TEST_ERROR_PATH)
     size_to_test_error = load_dict(SIZE_TO_TEST_ERROR_PATH)
 
-    print('min-p test error: ')
-    print_dict(minp_test_error)
-    print('size to test error:')
-    print_dict(size_to_test_error)
+    # Get heuristic data points
+    x = list(size_to_test_error.keys())
+    y = list(size_to_test_error.values())
+
+    # List of handles
+    handles = []
+    # Create figure
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    # Create scatter of empirically determined errors
+    empirical_dp = ax.scatter(x, y, label=f'Empirical errors', color='green')
+    handles.append(empirical_dp)
+    # Add labels
+    ax.title.set_text('Error on test set vs Training set size')
+    ax.set_xscale('log')
+    ax.set_xticks(x)
+    ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    ax.set_xlabel('Training set size')
+    ax.set_ylabel('Prob. of error')
+
+    # Generate line for min-p error (aspirational error)
+    optimal_dp = ax.axhline(y=minp_test_error['e'], color='red', label=f'Ideal error',
+            dashes=[2, 2])
+    handles.append(optimal_dp)
+    # Set Y-limit to contain optimal error
+    plt.ylim(minp_test_error['e']*0.95, max(y)*1.05)
+    plt.legend(handles=handles)
+    plt.show()
 
 def plot_optimal_perceptron_no_vs_size():
     """
-    Plots the optimal number of perceptrons vs the size of the training
-    set.
+    Plots the optimal number of perceptrons vs the size of the training set.
     """
     size_to_optimal_p = load_dict(SIZE_TO_OPT_P_PATH)
 
-    print('size to optimal perceptron no.')
-    print_dict(size_to_optimal_p)
+    # Extract x, y
+    x = list(size_to_optimal_p.keys())
+    y = list(size_to_optimal_p.values())
+    
+    # Create figure
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    # Add labels
+    ax.title.set_text('Optimal no. of perceptrons vs Training set size')
+    ax.set_xlabel('Training set size')
+    ax.set_xscale('log')
+    ax.set_ylabel('No. of perceptrons')
+    # Create scatter
+    ax.scatter(x, y)
+    plt.show()
 
 def plot_error_vs_perceptron_no():
     """
@@ -551,8 +589,28 @@ def plot_error_vs_perceptron_no():
     each given set size.
     """
     size_p_no_error = load_dict(SIZE_PERCEPT_NO_ERROR_PATH)
-    print('perceptron no and corresponding error for each size')
-    print_dict(size_p_no_error)
+    # Create figure
+    fig = plt.figure()
+
+    # Configure layout
+    col_no = 3
+    row_no = math.ceil(len(size_p_no_error) / col_no)
+    count = 1
+
+    for size, data in size_p_no_error.items():
+        # Unpack data
+        percept_no = [entry[0] for entry in data]
+        error = [entry[1] for entry in data]
+        # Create plot
+        ax = fig.add_subplot(row_no, col_no, count)
+        ax.title.set_text(f'N={size}')
+        ax.set_xlabel('No. of perceptrons')
+        ax.set_ylabel('Prob. of error')
+        ax.stem(percept_no, error, '-.')
+        # Increment plot count
+        count += 1
+    
+    plt.show()
 
 def main():
     if not LOAD_CACHED_DATA:
@@ -577,14 +635,14 @@ def main():
 
     if OBSERVE:
         # Plot results
-        #plot_samples(train_sets[100], 'train set 100')
-        #plot_samples(train_sets[500], 'train set 500')
-        #plot_samples(train_sets[1000], 'train set 1k')
-        #plot_samples(train_sets[2000], 'train set 2k')
-        #plot_samples(train_sets[5000], 'train set 5k')
-        #plot_samples(test_sets[100000], 'test set 100k')
+        plot_samples(train_sets[100], 'train set 100')
+        plot_samples(train_sets[500], 'train set 500')
+        plot_samples(train_sets[1000], 'train set 1k')
+        plot_samples(train_sets[2000], 'train set 2k')
+        plot_samples(train_sets[5000], 'train set 5k')
+        plot_samples(test_sets[100000], 'test set 100k')
         plot_error_vs_size()
-        plot_error_vs_perceptron_no()
+        plot_error_vs_perceptron_no() 
         plot_optimal_perceptron_no_vs_size()
 
 main()
