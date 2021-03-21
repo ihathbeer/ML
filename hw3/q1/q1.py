@@ -20,14 +20,25 @@ import random
 from sklearn.metrics import accuracy_score
 
 LOAD_CACHED_DATA = True
-SOLVE = True
+SOLVE = False
 OBSERVE = True
+
+# Paths to various pickles
+SIZE_PERCEPT_NO_ERROR_PATH = 'size_to_perceptron_no_error.pickle'
+SIZE_TO_OPT_P_PATH = 'size_to_optimal_p.pickle'
+MINP_TEST_ERROR_PATH = 'minp_test_error.pickle'
+SIZE_TO_TEST_ERROR_PATH = 'size_to_test_error.pickle'
+TRAIN_DATA_PATH = 'train.pickle'
+TEST_DATA_PATH = 'test.pickle'
 
 # Eigenvalues of covariance matrices should be in range [0.5, 1.4]
 COV_EIGEN_BOUND = [0.5, 1.4]
 # Set sizes
 TRAIN_SET_SIZES = [100, 200, 500, 1000, 2000, 5000]
 TEST_SET_SIZES = [100000]
+
+# Maximum number of perceptrons to try out for a ANN MLP
+MAX_PERCEPTRON_NO = 20
 # Number of features to each sample
 FEATURE_NO = 3
 # No. of epochs to train ANN MLPs
@@ -174,8 +185,6 @@ def generate_sets() -> (dict, dict):
         test_sets[size] = generate_and_sample(size)
         print(f' -> Generated test set of size {size}')
 
-    plot_samples(train_sets[5000], 'training set 5000')
-
     return train_sets, test_sets
 
 def save_dict(dict_:dict, filename: str) -> None:
@@ -269,7 +278,7 @@ def minp_classification(class_dist_samples: dict):
     print('Incorrectly classified no.: ', incorrectly_labeled_no)
     print('P(error)', error)
 
-    save_dict({'e': error}, 'minp_test_error.pickle')
+    save_dict({'e': error}, MINP_TEST_ERROR_PATH)
 
     return cc, icc, error
 
@@ -423,7 +432,7 @@ def find_best_config(train_sets):
         size_to_XY[size] = (X, Y)
 
         # try out different no. of perceptrons
-        for k in range(1, 4):
+        for k in range(1, MAX_PERCEPTRON_NO + 1):
             # get mean accuracy from cross-validation
             acc = run_cross_val(X, Y, k, EPOCH_NO)
             # compute error
@@ -444,11 +453,9 @@ def find_best_config(train_sets):
         # save best config (no. of perceptrons) for this size set
         size_to_optimal_p[size] = best_perceptron_no
 
-        break
-
     # Save size_to_perceptron_error and size_to_optimal_p to file
-    save_dict(size_to_perceptron_error, 'size_to_perceptron_no_error.pickle')
-    save_dict(size_to_optimal_p, 'size_to_optimal_p.pickle')
+    save_dict(size_to_perceptron_error, SIZE_PERCEPT_NO_ERROR_PATH)
+    save_dict(size_to_optimal_p, SIZE_TO_OPT_P_PATH)
 
     # Reconstruct optimal models & train them on (whole) training set pertaining to their size
     size_to_model = {}
@@ -496,7 +503,7 @@ def solve(train_sets, test_sets):
         print(f'Min. prob of error (Ntrain = {size}) = {error}')
         size_to_error[size] = error
 
-    save_dict(size_to_error, 'size_to_test_error.pickle')
+    save_dict(size_to_error, SIZE_TO_TEST_ERROR_PATH)
 
 def print_dict(dict_):
     """
@@ -511,8 +518,8 @@ def plot_error_vs_size():
     Plots the performance achieved by the min-p classifier and each MLP
     model.
     """
-    minp_test_error = load_dict('minp_test_error.pickle')
-    size_to_test_error = load_dict('size_to_test_error.pickle')
+    minp_test_error = load_dict(MINP_TEST_ERROR_PATH)
+    size_to_test_error = load_dict(SIZE_TO_TEST_ERROR_PATH)
 
     print('min-p test error: ')
     print_dict(minp_test_error)
@@ -524,7 +531,7 @@ def plot_optimal_perceptron_no_vs_size():
     Plots the optimal number of perceptrons vs the size of the training
     set.
     """
-    size_to_optimal_p = load_dict('size_to_optimal_p.pickle')
+    size_to_optimal_p = load_dict(SIZE_TO_OPT_P_PATH)
 
     print('size to optimal perceptron no.')
     print_dict(size_to_optimal_p)
@@ -534,7 +541,7 @@ def plot_error_vs_perceptron_no():
     Plots the error achieved by each configuration (no. of perceptrons) for
     each given set size.
     """
-    size_p_no_error = load_dict('size_to_perceptron_no_error.pickle')
+    size_p_no_error = load_dict(SIZE_PERCEPT_NO_ERROR_PATH)
     print('perceptron no and corresponding error for each size')
     print_dict(size_p_no_error)
 
@@ -546,13 +553,13 @@ def main():
 
     if not LOAD_CACHED_DATA:
         train_sets, test_sets = generate_sets()
-        save_dict(train_sets, 'train.pickle')
-        save_dict(test_sets, 'test.pickle')
+        save_dict(train_sets, TRAIN_DATA_PATH)
+        save_dict(test_sets, TEST_DATA_PATH)
     else:
         print('Using cached data')
         # Load already-generated sets to save time
-        train_sets = load_dict('train.pickle')
-        test_sets = load_dict('test.pickle')
+        train_sets = load_dict(TRAIN_DATA_PATH)
+        test_sets = load_dict(TEST_DATA_PATH)
 
     if SOLVE:
         # Min-p classification
