@@ -25,7 +25,7 @@ tf.get_logger().setLevel(logging.ERROR)
 random.seed()
 
 # Settings
-LOAD_CACHED_DATA = False
+LOAD_CACHED_DATA = True
 SOLVE = True
 OBSERVE = False
 
@@ -47,7 +47,7 @@ TRAIN_SET_SIZES = [100, 200, 500, 1000, 2000, 5000]
 TEST_SET_SIZES = [100000]
 
 # Maximum number of perceptrons to try out for a ANN MLP
-MAX_PERCEPTRON_NO = 20
+MAX_PERCEPTRON_NO = 15
 # Number of features to each sample
 FEATURE_NO = 3
 # No. of epochs to train ANN MLPs
@@ -59,7 +59,7 @@ DATA_PATH = 'data/'
 CLASS_CONFIG = {
         1: { 
             "mean": [1, 1, 1],
-            "cov": [[ 0.8, 0.03, 0.02 ],
+            "cov": [[ 1.01, 0.03, 0.02 ],
                     [ 0.03, 1.12, 0.03],
                     [ 0.02, 0.03, 1.06]],
             "color": "green",
@@ -75,17 +75,17 @@ CLASS_CONFIG = {
         },
         3: { 
             "mean": [-1, -1, 1],
-            "cov": [[ 0.92, 0.02, 0.19 ],
-                    [ 0.02, 0.81, 0.03],
-                    [ 0.19, 0.03, 0.71]],
+            "cov": [[ 1.09, 0.02, 0.19 ],
+                    [ 0.02, 1.01, 0.03],
+                    [ 0.19, 0.03, 0.61]],
             "color": "blue",
             "marker": "s"
         },
         4: { 
             "mean": [-1, 1, -1],
             "cov": [[ 1.02, 0.03, 0.24 ],
-                    [ 0.03, 0.97, 0.2 ],
-                    [ 0.24, 0.2, 0.82]],
+                    [ 0.03, 1.27, 0.2 ],
+                    [ 0.24, 0.2, 0.73]],
             "color": "purple",
             "marker": "D"
         },
@@ -461,6 +461,8 @@ def find_best_config(train_sets):
 
         # save best config (no. of perceptrons) for this size set
         size_to_optimal_p[size] = best_perceptron_no
+
+        break
 
     # Save size_to_perceptron_error and size_to_optimal_p to file
     save_dict(size_to_perceptron_error, SIZE_PERCEPT_NO_ERROR_PATH)
