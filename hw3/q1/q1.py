@@ -19,9 +19,18 @@ import pickle
 import random
 from sklearn.metrics import accuracy_score
 
-LOAD_CACHED_DATA = True
-SOLVE = False
-OBSERVE = True
+# Disable TF warnings (temp. measure)
+tf.get_logger().setLevel(logging.ERROR)
+# Seed pseudo-random no. generator
+random.seed()
+
+# Settings
+LOAD_CACHED_DATA = False
+SOLVE = True
+OBSERVE = False
+
+# number of splits for cross-validation
+K_SPLIT = 10
 
 # Paths to various pickles
 SIZE_PERCEPT_NO_ERROR_PATH = 'size_to_perceptron_no_error.pickle'
@@ -252,7 +261,7 @@ def minp_classification(class_dist_samples: dict):
             counter += 1
 
             # print where we are
-            if counter % 1000 == 0:
+            if counter % 10000 == 0:
                 print('Counter: ', counter)
 
 
@@ -372,7 +381,7 @@ def run_cross_val(X, Y, perceptron_no, epoch_no):
     print(f'Sample no: {len(Y)} {len(X)}')
 
     nn = create_classifier(perceptron_no, epoch_no)
-    scores = cross_val_score(nn, X, Y, cv=10)
+    scores = cross_val_score(nn, X, Y, cv=K_SPLIT)
 
     return np.mean(scores)
 
@@ -546,11 +555,6 @@ def plot_error_vs_perceptron_no():
     print_dict(size_p_no_error)
 
 def main():
-    # Disable TF warnings (temp. measure)
-    tf.get_logger().setLevel(logging.ERROR)
-    # Seed pseudo-random no. generator
-    random.seed()
-
     if not LOAD_CACHED_DATA:
         train_sets, test_sets = generate_sets()
         save_dict(train_sets, TRAIN_DATA_PATH)
