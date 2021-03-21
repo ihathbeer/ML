@@ -10,9 +10,14 @@ import matplotlib.pyplot as plt
 from keras import models
 from keras import layers
 from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-# from sklearn.datasets import make_classification
+import tensorflow as tf
 import random
+import logging
+from sklearn.metrics import accuracy_score
+
+tf.get_logger().setLevel(logging.ERROR)
 
 # Eigenvalues of covariance matrices should be in range [0.5, 1.4]
 cov_eigen_bound = [0.5, 1.4]
@@ -292,16 +297,30 @@ def create_nn(perceptron_no: int):
     # add output layer
     net.add(layers.Dense(units=len(classes), activation='softmax'))
     # compile
-    net.compile(loss='sparse_categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
+    net.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
 
     return net
 
+def create_classifier(perceptron_no, epoch_no=500):
+    nn = KerasClassifier(build_fn=create_nn, perceptron_no=perceptron_no, epochs=epoch_no, batch_size=100, verbose=0)
+
+    return nn
+
 def run_cross_val(X, Y, perceptron_no, epoch_no):
+    """
+    Runs 10-fold cross-validation on given training data.
+
+    :param X: data
+    :param Y: labels
+    :param perceptron_no: number of perceptrons of NN
+    :param epoch_no: number of epochs to train on
+    :return: mean accuracy obtained from the k-folds
+    """
     print(f'Sample no: {len(Y)} {len(X)}')
 
-    nn = KerasClassifier(build_fn=create_nn, perceptron_no=perceptron_no, epochs=epoch_no, batch_size=1, verbose=0)
-
+    nn = create_classifier(perceptron_no, epoch_no)
     scores = cross_val_score(nn, X, Y, cv=10)
+
     return np.mean(scores)
 
 def splice(set_: dict) -> (list, list):
@@ -319,13 +338,16 @@ def splice(set_: dict) -> (list, list):
     for label, items in set_.items():
         for sample in items["samples"]:
             X.append(np.array(sample))
-            # print(f'true label {label} y: {y}')
             Y.append(label)
 
     X = np.array(X)
     Y = np.array(Y)
-    print('X: ', X.shape)
-    print('Y: ', Y.shape)
+
+    # one-hot encode label
+    Y = Y.reshape(len(Y), 1)
+    onehot_encoder = OneHotEncoder(sparse=False)
+    Y = onehot_encoder.fit_transform(Y)
+
     return X, Y
 
 # min prob of error is no of incorrect decisions / total no of samples
@@ -335,25 +357,87 @@ train_sets, test_sets = generate_sets()
 # plot_classification(cc, icc)
 
 # ANN stuff
-# maps set size -> optimal perceptron no.
-size_to_optimal_p = {}
 
-for size, set_ in train_sets.items():
-    print(f'=== Training set of size {size} ===')
-    best_error = 9999
-    best_perceptron_no = 0
+def find_best_topology():
+    # maps set size -> optimal perceptron no.
+    size_to_optimal_p = {}
+    # maps set size -> pair of (X, Y)
+    size_to_XY = {}
+    epoch_no = 500
 
-    for k in range(1, 8):
+    # Run cross-validation to determine best topology (no. of perceptrons)
+    # for each set size
+    for size, set_ in train_sets.items():
+        print(f'=== Training set of size {size} ===')
+        best_error = 9999
+        best_perceptron_no = 0
+
+        # get training pair
         X, Y = splice(set_)
-        acc = run_cross_val(X, Y, k, 100)
-        error = 1 - acc
+        # cache training pair
+        size_to_XY[size] = (X, Y)
 
-        print(f'Perceptron no. = {k} Avg cross-validation acc: {acc}')
+        # try out different no. of perceptrons
+        for k in range(1, 4):
+            # get mean accuracy from cross-validation
+            acc = run_cross_val(X, Y, k, epoch_no)
+            # compute error
+            error = 1 - acc
 
-        if error < best_error:
-            best_error = error
-            best_perceptron_no = k
+            print(f'Perceptron no. = {k} Avg cross-validation acc: {acc}')
 
-    print(f'Optimal no. of perceptrons for set size {size}: {best_perceptron_no}')
-    size_to_optimal_p[size] = best_perceptron_no
-    print('\n')
+            # check if this topology beats the running best error-wise
+            if error < best_error:
+                best_error = error
+                best_perceptron_no = k
+
+        print(f'Optimal no. of perceptrons for set size {size}: {best_perceptron_no}')
+        # save best topology (no. of perceptrons) for this size set
+        size_to_optimal_p[size] = best_perceptron_no
+        print('\n')
+
+    # Reconstruct optimal models & train them on (whole) training set pertaining to their size
+    size_to_model = {}
+
+    for size, optimal_p in size_to_optimal_p.items():
+        # rebuild model with same no. of perceptrons it achieved best accuracy on
+        size_to_model[size] = create_classifier(optimal_p)
+        # train model
+        size_to_model[size].fit(size_to_XY[size][0], size_to_XY[size][1])
+
+    return size_to_model
+
+def solve():
+    """
+    Finds the best topology (no. of perceptrons) for each training set by
+    picking the ones with the lowest error / highest accuracy. It then runs
+    each trained optimal model (each model corresponding to a training set size) 
+    on the test set and reports the errors.
+    """
+    size_to_model = find_best_topology()
+    X_test, Y_test = splice(test_sets[100000])
+
+    for size, model in size_to_model.items():
+        # run on test set
+        prediction = model.predict_proba(X_test)
+
+        incorrectly_classified_no = 0
+        error = 0
+
+        for k in range(len(Y_test)):
+            predicted_posteriors = prediction[k]
+            # retrieve index of predicted class label by picking the maximum poster
+            predicted_index = np.argmax(predicted_posteriors)
+
+            # retrieve index of actual label
+            actual_index = np.argmax(Y_test[k])
+            # check if mismatch between predicted label & actual label
+            if predicted_index != actual_index:
+                incorrectly_classified_no += 1
+
+        # determine error for this MLP model
+        error = incorrectly_classified_no / len(Y_test)
+
+        print(f'Min. prob of error (Ntrain = {size}) = {error}')
+
+solve()
