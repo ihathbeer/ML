@@ -462,8 +462,6 @@ def find_best_config(train_sets):
         # save best config (no. of perceptrons) for this size set
         size_to_optimal_p[size] = best_perceptron_no
 
-        break
-
     # Save size_to_perceptron_error and size_to_optimal_p to file
     save_dict(size_to_perceptron_error, SIZE_PERCEPT_NO_ERROR_PATH)
     save_dict(size_to_optimal_p, SIZE_TO_OPT_P_PATH)
