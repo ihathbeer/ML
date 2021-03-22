@@ -36,7 +36,8 @@ K_SPLIT = 10
 
 # Paths to various pickles
 SIZE_PERCEPT_NO_ERROR_PATH = 'size_to_perceptron_no_error.pickle'
-SIZE_TO_OPT_P_PATH = 'size_to_optimal_p.pickle'
+# training set size to optimal no. of perceptrons for that model
+SIZE_TO_OPT_P_PATH = 'size_to_optimal_p.pickle' 
 MINP_TEST_ERROR_PATH = 'minp_test_error.pickle'
 SIZE_TO_TEST_ERROR_PATH = 'size_to_test_error.pickle'
 TRAIN_DATA_PATH = 'train.pickle'
@@ -56,6 +57,7 @@ FEATURE_NO = 3
 EPOCH_NO = 500
 # Where data is saved
 DATA_PATH = 'data/'
+IMG_PATH = 'pics/'
 
 # Class parameters
 CLASS_CONFIG = {
@@ -144,7 +146,7 @@ def plot_samples(class_dist_samples: dict, title: str) -> None:
     :param class_dist_samples: dictionary with class labels for keys and child dictionary containing
                                "samples" for values
     """
-    fig = plt.figure(int(random.random() % 99999))
+    fig = plt.figure(int(random.randrange(0, 999999)))
     ax = fig.add_subplot(1, 1, 1, projection='3d')
     ax.title.set_text(title)
     ax.set_xlabel('x0')
@@ -159,7 +161,8 @@ def plot_samples(class_dist_samples: dict, title: str) -> None:
         handles.append(img)
 
     plt.legend(handles=handles)
-    plt.show()
+    plt.savefig(f'{IMG_PATH}/{title}.png', bbox_inches='tight', pad_inches=0)
+    # plt.show()
 
 def generate_sets() -> (dict, dict):
     """
@@ -532,6 +535,9 @@ def plot_error_vs_size():
     minp_test_error = load_dict(MINP_TEST_ERROR_PATH)
     size_to_test_error = load_dict(SIZE_TO_TEST_ERROR_PATH)
 
+    print_dict(minp_test_error)
+    print_dict(size_to_test_error)
+
     # Get heuristic data points
     x = list(size_to_test_error.keys())
     y = list(size_to_test_error.values())
@@ -542,7 +548,7 @@ def plot_error_vs_size():
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     # Create scatter of empirically determined errors
-    empirical_dp = ax.scatter(x, y, label=f'Empirical errors', color='green')
+    empirical_dp = ax.scatter(x, y, label=f'Empirical errors', color='green', s=40)
     handles.append(empirical_dp)
     # Add labels
     ax.title.set_text('Error on test set vs Training set size')
@@ -559,6 +565,7 @@ def plot_error_vs_size():
     # Set Y-limit to contain optimal error
     plt.ylim(minp_test_error['e']*0.95, max(y)*1.05)
     plt.legend(handles=handles)
+    plt.savefig(f'{IMG_PATH}/size_to_test_error.png', bbox_inches='tight', pad_inches=0.2)
     plt.show()
 
 def plot_optimal_perceptron_no_vs_size():
@@ -589,28 +596,25 @@ def plot_error_vs_perceptron_no():
     each given set size.
     """
     size_p_no_error = load_dict(SIZE_PERCEPT_NO_ERROR_PATH)
-    # Create figure
-    fig = plt.figure()
-
     # Configure layout
-    col_no = 3
-    row_no = math.ceil(len(size_p_no_error) / col_no)
     count = 1
 
     for size, data in size_p_no_error.items():
+        fig = plt.figure(count)
         # Unpack data
         percept_no = [entry[0] for entry in data]
         error = [entry[1] for entry in data]
         # Create plot
-        ax = fig.add_subplot(row_no, col_no, count)
+        ax = fig.add_subplot(1, 1, 1)
         ax.title.set_text(f'N={size}')
         ax.set_xlabel('No. of perceptrons')
         ax.set_ylabel('Prob. of error')
         ax.stem(percept_no, error, '-.')
         # Increment plot count
         count += 1
+        plt.savefig(f'{IMG_PATH}/error_vs_p_no_{size}.png', bbox_inches='tight', pad_inches=0.2)
     
-    plt.show()
+    #plt.show()
 
 def main():
     if not LOAD_CACHED_DATA:
@@ -636,6 +640,7 @@ def main():
     if OBSERVE:
         # Plot results
         plot_samples(train_sets[100], 'train set 100')
+        plot_samples(train_sets[200], 'train set 200')
         plot_samples(train_sets[500], 'train set 500')
         plot_samples(train_sets[1000], 'train set 1k')
         plot_samples(train_sets[2000], 'train set 2k')
@@ -643,6 +648,6 @@ def main():
         plot_samples(test_sets[100000], 'test set 100k')
         plot_error_vs_size()
         plot_error_vs_perceptron_no() 
-        plot_optimal_perceptron_no_vs_size()
+        # plot_optimal_perceptron_no_vs_size()
 
 main()
