@@ -27,8 +27,8 @@ tf.get_logger().setLevel(logging.ERROR)
 random.seed()
 
 # Settings
-LOAD_CACHED_DATA = True
-SOLVE = False
+LOAD_CACHED_DATA = False
+SOLVE = True
 OBSERVE = True
 
 # number of splits for cross-validation
