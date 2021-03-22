@@ -229,7 +229,7 @@ def minp_classification(class_dist_samples: dict):
     """
     Takes in a dictionary that maps a class label to samples & the distribution
     the samples came from. It then performs min-p classification to determine
-    the minimum probability of error.
+    the probability of error.
 
     :param class_dist_samples: dict returned by generate_and_sample
     """
