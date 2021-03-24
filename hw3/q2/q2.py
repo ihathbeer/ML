@@ -11,6 +11,7 @@ import matplotlib as mpl
 from collections import defaultdict
 
 DATA_PATH = 'data/'
+IMG_PATH = 'pics/'
 CROSSV_K = 10
 
 # Markers & colors for each class label
@@ -173,7 +174,9 @@ def plot_classification(ccl: dict, iccl: dict):
             label=f'Class {k} incorrectly classified', s=1.5))
 
     plt.legend(handles=handles)
-    plt.show()
+    plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+    plt.savefig(f'{IMG_PATH}/classification.png')
+    #plt.show()
 
 
 def plot_data(X: list, Y: list, title: str) -> None:
@@ -210,7 +213,9 @@ def plot_data(X: list, Y: list, title: str) -> None:
             label=f'Class {k}', s=1.5))
 
     plt.legend(handles=handles)
-    plt.show()
+    plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+    plt.savefig(f'{IMG_PATH}/{title}.png')
+    #plt.show()
 
 def plot_params_vs_error(param_error: dict) -> None:
     """
@@ -249,7 +254,8 @@ def plot_params_vs_error(param_error: dict) -> None:
     # Add colorbar
     cbar = fig.colorbar(img, ax=ax)
     cbar.ax.set_ylabel("Probability of error")
-    plt.show()
+    plt.savefig(f'{IMG_PATH}/params_v_error.png', bbox_inches='tight', pad_inches=0.1)
+    #plt.show()
 
 def solve():
     """
