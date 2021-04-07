@@ -1,21 +1,16 @@
 from hw2q1 import hw2q1
-import pickle
 import numpy as np
-from numpy.linalg import eig
-from scipy.stats import multivariate_normal
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import matplotlib
 from keras import models
 from keras import layers
 from sklearn.model_selection import cross_val_score
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
 import random
 import math
 import logging
-import pickle
 import random
 from sklearn.metrics import mean_squared_error
 
@@ -137,13 +132,19 @@ def plot_solution(test_x, test_y: [float], predicted_y: [float]):
     fig = plt.figure()
     # setup plot
     ax1 = fig.add_subplot(111, projection='3d')
+    handles = []
     # add test data scatter
-    ax1.scatter(test_x[:,1], test_x[:,0], test_y, color='g')
-    ax1.scatter(test_x[:,1], test_x[:,0], predicted_y, color='r')
+    handles.append(ax1.scatter(test_x[:,1], test_x[:,0], test_y, color='g',
+        label='Test set w/ actual labels'))
+    handles.append(ax1.scatter(test_x[:,1], test_x[:,0], predicted_y, color='r',
+        label='Test set w/ predicted labels'))
+
     # add prediction scatter
     ax1.set_xlabel("x2")
     ax1.set_ylabel("x1")
     ax1.set_zlabel("y")
+    ax1.title.set_text('Results')
+    plt.legend(handles=handles)
     plt.show()
 
 def solve(train_x, train_y, test_x, test_y):
