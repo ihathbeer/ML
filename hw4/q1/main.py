@@ -15,7 +15,7 @@ import random
 from sklearn.metrics import mean_squared_error
 
 # Max. no. of perceptrons to try out for ANN MLP
-MAX_PERCEPTRON_NO = 25
+MAX_PERCEPTRON_NO = 30
 FEATURE_NO = 2
 EPOCH_NO = 200
 K_SPLIT = 10
@@ -101,7 +101,7 @@ def find_best_config(X, Y):
         mse = run_cross_val(X, Y, k, EPOCH_NO)
 
         # save the error for this config
-        perceptron_no_to_error[k].append(mse)
+        perceptron_no_to_error[k] = mse
         print(f'Perceptron no. = {k} Cross-validation MSE: {mse}')
 
         # check if this configuration beats the running best error-wise
@@ -113,6 +113,7 @@ def find_best_config(X, Y):
     print(f'Best cross-validation MSE: {best_error}')
     print('\n')
 
+    plot_error_vs_perceptron_no(perceptron_no_to_error)
     # Reconstruct optimal model & train it on (whole) training set
     # Rebuild model with same no. of perceptrons it achieved best error on
     best_model = create_regressor(best_perceptron_no)
@@ -120,6 +121,25 @@ def find_best_config(X, Y):
     best_model.fit(X, Y)
 
     return best_model
+
+def plot_error_vs_perceptron_no(perceptron_no_to_error):
+    """
+    Plots the error achieved by each configuration (no. of perceptrons).
+    """
+    # Configure layout
+    count = 1
+
+    perceptron_no = list(perceptron_no_to_error.keys())
+    error = list(perceptron_no_to_error.values())
+
+    fig = plt.figure(999)
+    # Create plot
+    ax = fig.add_subplot(1, 1, 1)
+    ax.title.set_text(f'Cross-validation avg MSE vs perceptron no.')
+    ax.set_xlabel('No. of perceptrons')
+    ax.set_ylabel('Average mean-squared error')
+    ax.stem(perceptron_no, error, '-.')
+    plt.show()
 
 def plot_solution(test_x, test_y: [float], predicted_y: [float]):
     """
