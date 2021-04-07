@@ -15,7 +15,7 @@ import random
 from sklearn.metrics import mean_squared_error
 
 # Max. no. of perceptrons to try out for ANN MLP
-MAX_PERCEPTRON_NO = 30
+MAX_PERCEPTRON_NO = 50
 FEATURE_NO = 2
 EPOCH_NO = 200
 K_SPLIT = 10
