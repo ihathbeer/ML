@@ -61,7 +61,7 @@ def process_image(name: str):
 
 def plot_gmm(image, component_no: int, name: str):
     """
-    Creates a gaussian mixture model for given image with the given number
+    Creates and plots a gaussian mixture model for given image with the given number
     of components.
 
     :param image: image to cluster
@@ -72,7 +72,7 @@ def plot_gmm(image, component_no: int, name: str):
     X, width, height = image
     # Create GMM & fit data
     gmm = GaussianMixture(component_no).fit(X)
-    # Get clusters
+    # Get clusters (uses MAP behind the scenes)
     prediction = gmm.predict(X)
     # Render clusters
     plt.imshow(prediction.reshape(width, height))
@@ -134,7 +134,7 @@ def plot_metric_vs_component_no(component_no: [float], metric: [float],
 
     # Format plot_name for hard storage
     plot_name = plot_name.replace(' ', '_')
-    plt.savefig(f'{IMG_PATH}/{plot_name}{EXTENSION}', bbox_inches='tight', pad_inches=0)       
+    plt.savefig(f'{IMG_PATH}/{plot_name}{EXTENSION}', bbox_inches='tight', pad_inches=0.2)       
 
 def find_best_M(image):
     """
